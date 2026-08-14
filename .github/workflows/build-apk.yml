@@ -21,22 +21,18 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            git \
-            zip \
-            unzip \
-            openjdk-17-jdk \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config
+          sudo apt-get install -y build-essential git zip unzip openjdk-17-jdk autoconf automake libtool pkg-config
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
       - name: Install Android SDK packages
-        run: sdkmanager "platform-tools" "platforms;android-33" "build-tools;35.0.0"
+        env:
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+        run: |
+          mkdir -p "$ANDROID_HOME"
+          sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "platforms;android-33" "build-tools;35.0.0"
 
       - name: Install Buildozer
         run: |
@@ -51,5 +47,3 @@ jobs:
         with:
           name: jarvis-apk
           path: bin/*.apk
-
-
