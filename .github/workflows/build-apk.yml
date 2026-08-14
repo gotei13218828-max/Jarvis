@@ -36,6 +36,8 @@ jobs:
 
           unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cmdline
           mv /tmp/android-cmdline/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+          mkdir -p "$ANDROID_HOME/tools/bin"
+          ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$ANDROID_HOME/tools/bin/sdkmanager"
 
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
 
