@@ -18,21 +18,31 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git zip unzip openjdk-17-jdk autoconf automake libtool pkg-config
+          sudo apt-get install -y \
+            build-essential git zip unzip wget \
+            openjdk-17-jdk autoconf automake libtool pkg-config
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        env:
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+      - name: Install Android SDK
         run: |
-          mkdir -p "$ANDROID_HOME"
-          sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "platforms;android-33" "build-tools;35.0.0"
+          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+            -O /tmp/cmdline-tools.zip
+
+          unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cmdline
+          mv /tmp/android-cmdline/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
+
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
+
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;35.0.0"
 
       - name: Install Buildozer
         run: |
@@ -40,6 +50,9 @@ jobs:
           pip install buildozer cython
 
       - name: Build APK
+        env:
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
         run: buildozer android debug
 
       - name: Upload APK
