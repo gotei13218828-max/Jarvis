@@ -21,6 +21,11 @@ android.archs = arm64-v8a
 android.allow_backup = True
 android.copy_libs = 1
 
+# Disable automatic dependency resolution for packages without Android wheels
+android.skip_update = False
+p4a.bootstrap = sdl2
+p4a.requirements = python3,kivy
+
 [buildozer]
 
 log_level = 2
