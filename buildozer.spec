@@ -9,7 +9,7 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas,json,mp3,wav
 
 version = 0.1
 
-requirements = python3,kivy
+requirements = python3,kivy,charset-normalizer==2.1.1
 
 orientation = portrait
 fullscreen = 0
@@ -22,7 +22,6 @@ android.archs = arm64-v8a
 android.allow_backup = True
 android.copy_libs = 1
 
-# Don't automatically resolve dependencies - only use what's listed
 android.ignore_setup_py = 1
 
 [buildozer]
