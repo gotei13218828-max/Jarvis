@@ -90,18 +90,14 @@ jobs:
 
       - name: Configure python-for-android
         run: |
-          if grep -q "^p4a.branch" buildozer.spec; then
             sed -i \
-              's/^p4a.branch.*/p4a.branch = develop/' \
               buildozer.spec
           else
             sed -i \
-              '/^\[app\]/a p4a.branch = develop' \
               buildozer.spec
           fi
 
           echo "===== P4A BRANCH ====="
-          grep -n "p4a.branch" buildozer.spec
 
       - name: Build APK
         env:
