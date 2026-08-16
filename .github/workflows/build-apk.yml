@@ -58,6 +58,26 @@ jobs:
 
           grep -n "p4a.branch" buildozer.spec
 
+      - name: Setup Android SDK
+        run: |
+          mkdir -p /home/runner/.buildozer/android/platform/android-sdk
+          export ANDROID_SDK_ROOT=/home/runner/.buildozer/android/platform/android-sdk
+          export ANDROID_HOME=/home/runner/.buildozer/android/platform/android-sdk
+          
+          # Download and install Android SDK
+          cd /home/runner/.buildozer/android/platform
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q commandlinetools-linux-11076708_latest.zip
+          rm commandlinetools-linux-11076708_latest.zip
+          
+          # Install SDK packages
+          yes | /home/runner/.buildozer/android/platform/cmdline-tools/bin/sdkmanager \
+            --sdk_root=$ANDROID_SDK_ROOT \
+            "build-tools;34.0.0" \
+            "platforms;android-34" \
+            "platform-tools" \
+            "ndk;25.1.8937393"
+
       - name: Build APK V.1
         env:
           PIP_NO_BUILD_ISOLATION: "1"
