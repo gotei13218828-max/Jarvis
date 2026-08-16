@@ -10,6 +10,7 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas,json,mp3,wav
 version = 0.1
 
 requirements = python3,kivy
+
 orientation = portrait
 fullscreen = 0
 
@@ -21,10 +22,8 @@ android.archs = arm64-v8a
 android.allow_backup = True
 android.copy_libs = 1
 
-# Disable automatic dependency resolution for packages without Android wheels
-android.skip_update = False
-p4a.bootstrap = sdl2
-p4a.requirements = python3,kivy
+# Don't automatically resolve dependencies - only use what's listed
+android.ignore_setup_py = 1
 
 [buildozer]
 
