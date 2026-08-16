@@ -1,4 +1,4 @@
-name: Build APK
+ name: Build APK
 
 on:
   push:
@@ -18,10 +18,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Clear buildozer cache
-        run: rm -rf .buildozer
+      - name: Clear Buildozer cache
+        run: |
+          rm -rf .buildozer
+          rm -rf bin
+          mkdir -p bin
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -39,46 +42,45 @@ jobs:
             pkg-config \
             m4
 
-      - name: Install Android SDK
-        run: |
-          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
-          export ANDROID_SDK_ROOT="$ANDROID_HOME"
-
-          mkdir -p "$ANDROID_HOME/cmdline-tools"
-
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
-            -O /tmp/cmdline-tools.zip
-
-          unzip -q /tmp/cmdline-tools.zip -d /tmp/android-cmdline
-          mv /tmp/android-cmdline/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
-
-          mkdir -p "$ANDROID_HOME/tools/bin"
-
-          ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            "$ANDROID_HOME/tools/bin/sdkmanager"
-
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses
-
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-            "platform-tools" \
-            "platforms;android-33" \
-            "build-tools;35.0.0"
-
       - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip
           pip install "buildozer==1.5.0"
           pip install "cython==0.29.34"
 
+      - name: Configure python-for-android
+        run: |
+          if grep -q "^p4a.branch" buildozer.spec; then
+            sed -i 's/^p4a.branch.*/p4a.branch = develop/' buildozer.spec
+          else
+            sed -i '/^\[app\]/a p4a.branch = develop' buildozer.spec
+          fi
+
+          grep -n "p4a.branch" buildozer.spec
+
       - name: Build APK
         env:
+          PIP_NO_BUILD_ISOLATION: "1"
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
           ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
           ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
-          PIP_NO_BUILD_ISOLATION: 1
         run: |
-          PIP_VERSION=25.3 buildozer android debug
-          echo "===== APK FILES ====="
-          ls -lh bin/
+          buildozer android debug
+
+          echo "===== BUILD OUTPUT ====="
+          ls -lah bin/
+
+          echo "===== SEARCHING FOR APK ====="
+          find . -type f -name "*.apk" -print
+
+          APK="$(find bin -maxdepth 1 -type f -name '*.apk' | head -n 1)"
+
+          if [ -z "$APK" ]; then
+            echo "ERROR: No APK was produced."
+            exit 1
+          fi
+
+          echo "APK FOUND: $APK"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -86,3 +88,4 @@ jobs:
           name: jarvis-apk
           path: bin/*.apk
           if-no-files-found: error
+          retention-days: 7
