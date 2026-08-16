@@ -43,6 +43,7 @@ jobs:
         run: |
           export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
           export ANDROID_SDK_ROOT="$ANDROID_HOME"
+
           mkdir -p "$ANDROID_HOME/cmdline-tools"
 
           wget -q https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
@@ -52,6 +53,7 @@ jobs:
           mv /tmp/android-cmdline/cmdline-tools "$ANDROID_HOME/cmdline-tools/latest"
 
           mkdir -p "$ANDROID_HOME/tools/bin"
+
           ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
             "$ANDROID_HOME/tools/bin/sdkmanager"
 
@@ -74,12 +76,13 @@ jobs:
           ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
           PIP_NO_BUILD_ISOLATION: 1
         run: |
-          buildozer android debug 2>&1 | grep -v "charset_normalizer" || true
-          # Continue even if there are warnings about missing wheels
+          buildozer android debug
+          echo "===== APK FILES ====="
+          ls -lh bin/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: jarvis-apk
           path: bin/*.apk
+          if-no-files-found: error
