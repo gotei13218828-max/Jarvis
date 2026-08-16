@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      build:
+        description: "Build Jarvis APK"
+        required: true
+        default: "yes"
 
 jobs:
   build:
