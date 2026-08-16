@@ -58,7 +58,7 @@ jobs:
 
           grep -n "p4a.branch" buildozer.spec
 
-      - name: Build APK
+      - name: Build APK V.1
         env:
           PIP_NO_BUILD_ISOLATION: "1"
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
