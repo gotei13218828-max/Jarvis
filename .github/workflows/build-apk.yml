@@ -93,17 +93,6 @@ jobs:
 
           echo "AIDL FOUND SUCCESSFULLY"
 
-      - name: Configure python-for-android
-        run: |
-            sed -i \
-              buildozer.spec
-          else
-            sed -i \
-              buildozer.spec
-          fi
-
-          echo "===== P4A BRANCH ====="
-
       - name: Build APK
         env:
           ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
