@@ -111,10 +111,15 @@ jobs:
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         run: |
           mkdir -p "$ANDROID_HOME/tools/bin"
-ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-  "$ANDROID_HOME/tools/bin/sdkmanager"
+
+          ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "$ANDROID_HOME/tools/bin/sdkmanager"
+
           echo "===== ANDROID SDK ====="
           ls -lah "$ANDROID_HOME"
+
+          echo "===== SDKMANAGER ====="
+          ls -lah "$ANDROID_HOME/tools/bin/sdkmanager"
 
           echo "===== BUILD TOOLS ====="
           ls -lah "$ANDROID_HOME/build-tools/35.0.0"
