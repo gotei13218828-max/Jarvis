@@ -48,6 +48,25 @@ jobs:
           pip install "buildozer==1.5.0"
           pip install "cython==0.29.34"
 
+      - name: Configure Android SDK
+        env:
+          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
+          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
+        run: |
+          mkdir -p "$ANDROID_HOME/tools/bin"
+
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            ln -sf \
+              "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+              "$ANDROID_HOME/tools/bin/sdkmanager"
+          else
+            echo "ERROR: sdkmanager was not found."
+            find "$ANDROID_HOME" -type f -name sdkmanager -print
+            exit 1
+          fi
+
+          yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses || true
+
       - name: Configure python-for-android
         run: |
           if grep -q "^p4a.branch" buildozer.spec; then
@@ -57,28 +76,6 @@ jobs:
           fi
 
           grep -n "p4a.branch" buildozer.spec
-
-      - name: Setup Android SDK
-        run: |
-          mkdir -p /home/runner/.buildozer/android/platform/android-sdk
-          export ANDROID_SDK_ROOT=/home/runner/.buildozer/android/platform/android-sdk
-          export ANDROID_HOME=/home/runner/.buildozer/android/platform/android-sdk
-          
-          # Download and install Android SDK
-          cd /home/runner/.buildozer/android/platform/android-sdk
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
-          unzip -q commandlinetools-linux-11076708_latest.zip
-          mkdir -p cmdline-tools/latest
-          mv cmdline-tools/* cmdline-tools/latest/ 2>/dev/null || true
-          rm commandlinetools-linux-11076708_latest.zip
-          
-          # Install SDK packages
-          yes | ./cmdline-tools/latest/bin/sdkmanager \
-            --sdk_root=$ANDROID_SDK_ROOT \
-            "build-tools;34.0.0" \
-            "platforms;android-34" \
-            "platform-tools" \
-            "ndk;25.1.8937393"
 
       - name: Build APK
         env:
