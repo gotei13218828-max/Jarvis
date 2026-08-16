@@ -18,12 +18,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Clear Buildozer cache
-        run: |
-          rm -rf .buildozer
-          rm -rf bin
-          mkdir -p bin
-
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -48,25 +42,6 @@ jobs:
           pip install "buildozer==1.5.0"
           pip install "cython==0.29.34"
 
-      - name: Configure Android SDK
-        env:
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
-        run: |
-          mkdir -p "$ANDROID_HOME/tools/bin"
-
-          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
-            ln -sf \
-              "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
-              "$ANDROID_HOME/tools/bin/sdkmanager"
-          else
-            echo "ERROR: sdkmanager was not found."
-            find "$ANDROID_HOME" -type f -name sdkmanager -print
-            exit 1
-          fi
-
-          yes | "$ANDROID_HOME/tools/bin/sdkmanager" --licenses || true
-
       - name: Configure python-for-android
         run: |
           if grep -q "^p4a.branch" buildozer.spec; then
@@ -81,8 +56,6 @@ jobs:
         env:
           PIP_NO_BUILD_ISOLATION: "1"
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
-          ANDROID_HOME: /home/runner/.buildozer/android/platform/android-sdk
-          ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
         run: |
           buildozer android debug
 
