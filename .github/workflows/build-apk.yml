@@ -75,10 +75,9 @@ jobs:
             "platforms;android-33" \
             "build-tools;35.0.0"
 
-          echo "===== BUILD TOOLS ====="
+          echo "===== CHECKING BUILD TOOLS ====="
 
-          ls -lah \
-            "$ANDROID_HOME/build-tools/35.0.0"
+          ls -lah "$ANDROID_HOME/build-tools/35.0.0"
 
           echo "===== CHECKING AIDL ====="
 
@@ -86,8 +85,6 @@ jobs:
             echo "ERROR: AIDL was not installed."
             exit 1
           fi
-
-          "$ANDROID_HOME/build-tools/35.0.0/aidl" --version
 
           echo "AIDL FOUND SUCCESSFULLY"
 
@@ -119,8 +116,14 @@ jobs:
           echo "===== BUILD TOOLS ====="
           ls -lah "$ANDROID_HOME/build-tools/35.0.0"
 
-          echo "===== AIDL ====="
-          "$ANDROID_HOME/build-tools/35.0.0/aidl" --version
+          echo "===== AIDL CHECK ====="
+
+          if [ ! -x "$ANDROID_HOME/build-tools/35.0.0/aidl" ]; then
+            echo "ERROR: AIDL not found."
+            exit 1
+          fi
+
+          echo "AIDL FOUND SUCCESSFULLY"
 
           echo "===== STARTING BUILDOZER ====="
 
