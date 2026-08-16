@@ -18,6 +18,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Clear buildozer cache
+        run: rm -rf .buildozer
+
       - name: Install dependencies
         run: |
           sudo apt-get update
