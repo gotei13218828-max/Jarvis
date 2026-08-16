@@ -76,7 +76,7 @@ jobs:
           ANDROID_SDK_ROOT: /home/runner/.buildozer/android/platform/android-sdk
           PIP_NO_BUILD_ISOLATION: 1
         run: |
-          buildozer android debug
+          PIP_VERSION=25.3 buildozer android debug
           echo "===== APK FILES ====="
           ls -lh bin/
 
