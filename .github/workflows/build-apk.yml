@@ -110,6 +110,9 @@ jobs:
           PIP_NO_BUILD_ISOLATION: "1"
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
         run: |
+          mkdir -p "$ANDROID_HOME/tools/bin"
+ln -sf "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+  "$ANDROID_HOME/tools/bin/sdkmanager"
           echo "===== ANDROID SDK ====="
           ls -lah "$ANDROID_HOME"
 
