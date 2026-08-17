@@ -21,12 +21,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: chatgpt-action
-        uses: unsafecoerce/chatgpt-action@release/v2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
