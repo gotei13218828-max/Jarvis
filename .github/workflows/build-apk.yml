@@ -126,11 +126,13 @@ jobs:
 
           echo "AIDL FOUND SUCCESSFULLY"
 
-          echo "===== STARTING BUILDOZER ====="    echo "===== BUILDOZER VERSION ====="
-buildozer --version
+          echo "===== STARTING BUILDOZER ====="
+
+          echo "===== BUILDOZER VERSION ====="
+          buildozer --version
 
           echo "===== P4A VERSION ====="
-python -m pip show python-for-android || true
+          python -m pip show python-for-android || true
 
           buildozer android debug
 
