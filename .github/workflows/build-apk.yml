@@ -45,19 +45,47 @@ jobs:
             cython==0.29.36 \
             python-for-android==2024.1.21
 
-      - name: Accept Android licenses
+      - name: Accept Android SDK licenses and install Build Tools
         run: |
-          yes | sdkmanager --licenses || true
+          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+
+          SDKMANAGER="$ANDROID_HOME/tools/bin/sdkmanager"
+
+          echo "Using SDK Manager:"
+          "$SDKMANAGER" --version
+
+          echo "Accepting Android SDK licenses..."
+          yes | "$SDKMANAGER" \
+            --sdk_root="$ANDROID_HOME" \
+            --licenses || true
+
+          echo "Installing required Android SDK packages..."
+          yes | "$SDKMANAGER" \
+            --sdk_root="$ANDROID_HOME" \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;37.0.0"
+
+          echo "Installed Android SDK packages:"
+          "$SDKMANAGER" \
+            --sdk_root="$ANDROID_HOME" \
+            --list_installed
 
       - name: Check AIDL
         run: |
-          AIDL="$ANDROID_HOME/build-tools/35.0.0/aidl"
-          if [ -f "$AIDL" ]; then
-            echo "AIDL found: $AIDL"
-            "$AIDL" --version || true
+          export ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
+
+          echo "Searching for AIDL..."
+
+          if [ -f "$ANDROID_HOME/build-tools/37.0.0/aidl" ]; then
+            echo "AIDL found:"
+            echo "$ANDROID_HOME/build-tools/37.0.0/aidl"
+            "$ANDROID_HOME/build-tools/37.0.0/aidl" --version || true
           else
-            echo "AIDL not found at $AIDL"
-            find "$ANDROID_HOME/build-tools" -name aidl -type f -print || true
+            echo "AIDL was not found."
+            find "$ANDROID_HOME" -name aidl -type f -print || true
+            exit 1
           fi
 
       - name: Clean Buildozer cache
