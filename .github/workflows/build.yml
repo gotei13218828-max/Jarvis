@@ -34,9 +34,11 @@ jobs:
             git \
             zip \
             unzip \
+            openjdk-17-jdk \
             autoconf \
             automake \
             autopoint \
+            gettext \
             libtool \
             pkg-config \
             zlib1g-dev \
@@ -48,7 +50,7 @@ jobs:
             libssl-dev \
             liblzma-dev
 
-      - name: Upgrade pip tools
+      - name: Upgrade pip
         run: |
           python -m pip install --upgrade pip setuptools wheel
 
@@ -56,7 +58,7 @@ jobs:
         run: |
           python -m pip install --upgrade buildozer
 
-      - name: Install compatible Cython
+      - name: Install Cython
         run: |
           python -m pip install "Cython==0.29.34"
 
@@ -65,16 +67,16 @@ jobs:
           echo "Current directory:"
           pwd
 
-          echo "Repository contents:"
+          echo "Repository:"
           ls -la
 
-          echo "Checking main.py:"
+          echo "Checking main.py..."
           test -f main.py
 
-          echo "Checking buildozer.spec:"
+          echo "Checking buildozer.spec..."
           test -f buildozer.spec
 
-          echo "Checking workflow:"
+          echo "Checking build.yml..."
           test -f .github/workflows/build.yml
 
       - name: Show versions
