@@ -1,7 +1,4 @@
-import os
 import threading
-import tempfile
-import time
 
 from kivy.app import App
 from kivy.clock import Clock
@@ -9,8 +6,6 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.utils import platform
-
-from gtts import gTTS
 
 
 if platform == "android":
@@ -91,11 +86,41 @@ if platform == "android":
             pass
 
 
+if platform == "android":
+
+    class TTSListener(PythonJavaClass):
+
+        __javainterfaces__ = [
+            "android/speech/tts/TextToSpeech$OnInitListener"
+        ]
+
+        def __init__(self, callback):
+            super().__init__()
+            self.callback = callback
+
+        @java_method("(I)V")
+        def onInit(self, status):
+            try:
+                self.callback(status)
+            except Exception as e:
+                print("[JARVIS] TTS callback error:", e)
+
+
 class JarvisApp(App):
 
     def build(self):
 
+        self.speech_recognizer = None
+        self.recognition_listener = None
+
+        self.tts = None
+        self.tts_listener = None
+        self.tts_ready = False
+
+        self.is_listening = False
+
         if platform == "android":
+
             try:
                 request_permissions([
                     Permission.RECORD_AUDIO
@@ -117,7 +142,9 @@ class JarvisApp(App):
             font_size="18sp"
         )
 
-        self.layout.add_widget(self.label)
+        self.layout.add_widget(
+            self.label
+        )
 
         self.mic_button = Button(
             text="🎤 MIC",
@@ -129,7 +156,9 @@ class JarvisApp(App):
             on_press=self.start_listening
         )
 
-        self.layout.add_widget(self.mic_button)
+        self.layout.add_widget(
+            self.mic_button
+        )
 
         self.stop_button = Button(
             text="STOP",
@@ -138,30 +167,153 @@ class JarvisApp(App):
         )
 
         self.stop_button.bind(
-            on_press=self.stop_listening
+            on_press=self.stop_all
         )
 
-        self.layout.add_widget(self.stop_button)
+        self.layout.add_widget(
+            self.stop_button
+        )
 
-        self.speech_recognizer = None
-        self.recognition_listener = None
-        self.is_listening = False
-        self.is_speaking = False
+        if platform == "android":
+            Clock.schedule_once(
+                self.initialize_tts,
+                0.5
+            )
 
         return self.layout
+
+    def initialize_tts(self, dt):
+
+        if platform != "android":
+            return
+
+        try:
+
+            PythonActivity = autoclass(
+                "org.kivy.android.PythonActivity"
+            )
+
+            TextToSpeech = autoclass(
+                "android.speech.tts.TextToSpeech"
+            )
+
+            self.tts_listener = TTSListener(
+                self.on_tts_init
+            )
+
+            self.tts = TextToSpeech(
+                PythonActivity.mActivity,
+                self.tts_listener
+            )
+
+            print(
+                "[JARVIS] Initializing Android TTS..."
+            )
+
+        except Exception as e:
+
+            print(
+                "[JARVIS] TTS initialization error:",
+                e
+            )
+
+    def on_tts_init(self, status):
+
+        Clock.schedule_once(
+            lambda dt: self.finish_tts_init(
+                status
+            ),
+            0
+        )
+
+    def finish_tts_init(self, status):
+
+        try:
+
+            TextToSpeech = autoclass(
+                "android.speech.tts.TextToSpeech"
+            )
+
+            if status != TextToSpeech.SUCCESS:
+
+                self.tts_ready = False
+
+                print(
+                    "[JARVIS] TTS initialization failed."
+                )
+
+                return
+
+            Locale = autoclass(
+                "java.util.Locale"
+            )
+
+            result = self.tts.setLanguage(
+                Locale.US
+            )
+
+            if result == TextToSpeech.LANG_MISSING_DATA:
+
+                self.tts_ready = False
+
+                print(
+                    "[JARVIS] TTS language data missing."
+                )
+
+                self.label.text = (
+                    "TTS language data is missing."
+                )
+
+                return
+
+            if result == TextToSpeech.LANG_NOT_SUPPORTED:
+
+                self.tts_ready = False
+
+                print(
+                    "[JARVIS] TTS language not supported."
+                )
+
+                self.label.text = (
+                    "TTS language is not supported."
+                )
+
+                return
+
+            self.tts_ready = True
+
+            print(
+                "[JARVIS] Android TTS ready."
+            )
+
+        except Exception as e:
+
+            self.tts_ready = False
+
+            print(
+                "[JARVIS] TTS setup error:",
+                e
+            )
 
     def start_listening(self, instance):
 
         if self.is_listening:
             return
 
-        if self.is_speaking:
-            self.label.text = "Jarvis is speaking..."
-            return
+        if platform == "android" and self.tts:
+
+            try:
+                if self.tts.isSpeaking():
+                    self.tts.stop()
+            except Exception:
+                pass
 
         self.is_listening = True
         self.mic_button.disabled = True
-        self.label.text = "🎤 Listening..."
+
+        self.label.text = (
+            "🎤 Listening..."
+        )
 
         if platform == "android":
 
@@ -253,7 +405,11 @@ class JarvisApp(App):
                 0
             )
 
-    def on_speech_result(self, text, error_code):
+    def on_speech_result(
+        self,
+        text,
+        error_code
+    ):
 
         Clock.schedule_once(
             lambda dt: self.process_speech(
@@ -311,11 +467,9 @@ class JarvisApp(App):
             response
         )
 
-        threading.Thread(
-            target=self.speak,
-            args=(response,),
-            daemon=True
-        ).start()
+        self.speak(
+            response
+        )
 
     def jarvis_response(self, text):
 
@@ -358,14 +512,10 @@ class JarvisApp(App):
             )
 
         if "goodbye" in command:
-            return (
-                "Goodbye."
-            )
+            return "Goodbye."
 
         if command == "bye" or command.startswith("bye "):
-            return (
-                "Goodbye."
-            )
+            return "Goodbye."
 
         return "You said: " + text
 
@@ -382,62 +532,54 @@ class JarvisApp(App):
 
     def speak(self, text):
 
-        temp_file = None
-        player = None
+        if platform != "android":
+            print(
+                "[JARVIS] Android TTS unavailable."
+            )
+            return
 
-        self.is_speaking = True
+        Clock.schedule_once(
+            lambda dt: self._speak_android(
+                text
+            ),
+            0
+        )
+
+    def _speak_android(self, text):
+
+        if not self.tts:
+
+            print(
+                "[JARVIS] TTS is not initialized."
+            )
+
+            return
+
+        if not self.tts_ready:
+
+            print(
+                "[JARVIS] TTS is not ready."
+            )
+
+            return
 
         try:
 
-            fd, temp_file = tempfile.mkstemp(
-                suffix=".mp3"
+            TextToSpeech = autoclass(
+                "android.speech.tts.TextToSpeech"
             )
 
-            os.close(fd)
+            self.tts.speak(
+                text,
+                TextToSpeech.QUEUE_FLUSH,
+                None,
+                "jarvis"
+            )
 
             print(
-                "[JARVIS] Generating speech..."
+                "[JARVIS] Speaking:",
+                text
             )
-
-            tts = gTTS(
-                text=text,
-                lang="en"
-            )
-
-            tts.save(temp_file)
-
-            if platform == "android":
-
-                MediaPlayer = autoclass(
-                    "android.media.MediaPlayer"
-                )
-
-                player = MediaPlayer()
-
-                player.setDataSource(
-                    temp_file
-                )
-
-                player.prepare()
-                player.start()
-
-                print(
-                    "[JARVIS] Speaking..."
-                )
-
-                while player.isPlaying():
-                    time.sleep(0.1)
-
-                print(
-                    "[JARVIS] Finished speaking."
-                )
-
-            else:
-
-                print(
-                    "[JARVIS] Audio generated:",
-                    temp_file
-                )
 
         except Exception as e:
 
@@ -446,45 +588,22 @@ class JarvisApp(App):
                 e
             )
 
-            Clock.schedule_once(
-                lambda dt: self.tts_error(
-                    str(e)
-                ),
-                0
-            )
-
-        finally:
-
-            self.is_speaking = False
-
-            if player:
-
-                try:
-                    player.release()
-                except Exception:
-                    pass
-
-            if temp_file:
-
-                try:
-
-                    if os.path.exists(temp_file):
-                        os.remove(temp_file)
-
-                except Exception as e:
-
-                    print(
-                        "[JARVIS] Could not delete "
-                        "temporary audio:",
-                        e
-                    )
-
-    def stop_listening(self, instance):
+    def stop_all(self, instance):
 
         self.is_listening = False
         self.mic_button.disabled = False
 
         self.destroy_speech_recognizer()
+
+        if platform == "android" and self.tts:
+
+            try:
+                self.tts.stop()
+            except Exception as e:
+                print(
+                    "[JARVIS] TTS stop error:",
+                    e
+                )
 
         self.label.text = (
             "Stopped. Tap Mic to talk."
@@ -569,22 +688,28 @@ class JarvisApp(App):
             "❌ Speech error: " + error
         )
 
-    def tts_error(self, error):
-
-        print(
-            "[JARVIS] TTS error:",
-            error
-        )
-
     def on_stop(self):
 
         try:
             self.destroy_speech_recognizer()
-        except Exception as e:
-            print(
-                "[JARVIS] Shutdown error:",
-                e
-            )
+        except Exception:
+            pass
+
+        if platform == "android" and self.tts:
+
+            try:
+                self.tts.stop()
+            except Exception:
+                pass
+
+            try:
+                self.tts.shutdown()
+            except Exception:
+                pass
+
+            self.tts = None
+            self.tts_listener = None
+            self.tts_ready = False
 
 
 if __name__ == "__main__":
