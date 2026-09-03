@@ -48,10 +48,9 @@ jobs:
       - name: Upgrade pip and install build dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          # Pin Cython to 0.29.36 to prevent recipe syntax failures in python-for-android C extensions
           python -m pip install "cython<3.0" buildozer
 
-      - name: Check tool versions
+      - name: Check toolchain versions
         run: |
           java -version
           python -V
