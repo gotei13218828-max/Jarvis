@@ -1,4 +1,4 @@
-name: Build Jarvis APK
+name: Build Jarvis Shell APK
 
 on:
   workflow_dispatch:
@@ -29,21 +29,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            git \
-            zip \
-            unzip \
-            autoconf \
-            automake \
-            libtool \
-            pkg-config \
-            zlib1g-dev \
-            libncurses5-dev \
-            libncursesw5-dev \
-            libtinfo5 \
-            cmake \
-            libffi-dev \
-            libssl-dev \
-            liblzma-dev
+            git zip unzip autoconf automake libtool pkg-config \
+            zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 \
+            cmake libffi-dev libssl-dev liblzma-dev
 
       - name: Purge cached environments
         run: |
@@ -52,14 +40,12 @@ jobs:
 
       - name: Install build tools with strict downgrades
         run: |
-          # Force pip downgrade globally so p4a inherits a safe version
           python -m pip install "pip==23.3.1" "setuptools==69.0.3" wheel
           python -m pip install "cython<3.0" buildozer
           python -m pip install "virtualenv<20.25.0"
 
       - name: Build Android APK
         env:
-          # Force Buildozer to use the safe pip version and bypass internal pip module crashes
           P4A_ENABLE_PY3: 1
         run: |
           buildozer appclean
