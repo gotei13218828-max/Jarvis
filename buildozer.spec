@@ -1,6 +1,5 @@
 [app]
-
-title = Jarvis
+title = Jarvis Shell
 package.name = jarvis
 package.domain = org.jarvis
 
@@ -9,13 +8,11 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas
 
 version = 1.0
 
-# Only pure dependencies for native Android bridging
-requirements = python3,kivy,pyjnius
+# Bare minimum requirements
+requirements = python3,kivy
 
 orientation = portrait
 fullscreen = 0
-
-android.permissions = INTERNET,RECORD_AUDIO
 
 android.api = 34
 android.minapi = 24
