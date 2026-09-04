@@ -45,29 +45,19 @@ jobs:
             libssl-dev \
             liblzma-dev
 
-      - name: Install pinned pip and build dependencies
+      - name: Purge cached virtual environments
         run: |
-          # Pin pip and setuptools to prevent BuildDependencyInstallerError
+          rm -rf .buildozer
+          rm -f requirements.txt
+
+      - name: Install build tools
+        run: |
           python -m pip install "pip<24.1" "setuptools<70.0.0" wheel
           python -m pip install "cython<3.0" buildozer
-
-      - name: Check toolchain versions
-        run: |
-          java -version
-          python -V
-          pip --version
-          cython -V
-          buildozer --version
 
       - name: Build Android APK
         run: |
           buildozer -v android debug
-
-      - name: Verify build artifacts
-        if: always()
-        run: |
-          echo "===== BIN CONTENTS ====="
-          ls -lah bin/ || true
 
       - name: Upload APK Artifact
         if: success()
