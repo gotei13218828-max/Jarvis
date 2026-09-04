@@ -9,6 +9,7 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas
 
 version = 1.0
 
+# Only pure dependencies for native Android bridging
 requirements = python3,kivy,pyjnius
 
 orientation = portrait
