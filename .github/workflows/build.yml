@@ -45,15 +45,17 @@ jobs:
             libssl-dev \
             liblzma-dev
 
-      - name: Upgrade pip and install build dependencies
+      - name: Install pinned pip and build dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          # Pin pip and setuptools to prevent BuildDependencyInstallerError
+          python -m pip install "pip<24.1" "setuptools<70.0.0" wheel
           python -m pip install "cython<3.0" buildozer
 
       - name: Check toolchain versions
         run: |
           java -version
           python -V
+          pip --version
           cython -V
           buildozer --version
 
