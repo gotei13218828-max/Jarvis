@@ -8,8 +8,8 @@ source.include_exts = py,png,jpg,jpeg,kv,atlas
 
 version = 1.0
 
-# Bare minimum requirements
-requirements = python3,kivy
+# Pin target python to match the GitHub Runner ABI
+requirements = python3==3.11.8,kivy
 
 orientation = portrait
 fullscreen = 0
@@ -17,10 +17,8 @@ fullscreen = 0
 android.api = 34
 android.minapi = 24
 android.ndk = 25b
-
 android.archs = arm64-v8a,armeabi-v7a
 android.accept_sdk_license = True
-
 android.debug_artifact = apk
 android.release_artifact = aab
 
