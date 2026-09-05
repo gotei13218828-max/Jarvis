@@ -36,6 +36,7 @@ jobs:
       - name: Purge cached environments
         run: |
           rm -rf .buildozer
+          rm -rf ~/.buildozer   # <-- This nukes the hidden global toolchain cache
           rm -f requirements.txt
 
       - name: Install build tools
