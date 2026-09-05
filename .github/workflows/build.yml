@@ -41,8 +41,13 @@ jobs:
 
       - name: Install build tools
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --upgrade "pip<26.0" setuptools wheel
           python -m pip install "cython<3.0" buildozer
+
+      - name: Set pip constraint to prevent venv breakage
+        run: |
+          echo "pip<26.0" > pip_constraint.txt
+          echo "PIP_CONSTRAINT=$GITHUB_WORKSPACE/pip_constraint.txt" >> $GITHUB_ENV
 
       - name: Build Android APK
         run: |
