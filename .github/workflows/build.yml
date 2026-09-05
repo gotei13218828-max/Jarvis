@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.8"
 
       - name: Set up OpenJDK 17
         uses: actions/setup-java@v4
@@ -40,18 +40,12 @@ jobs:
 
       - name: Install build tools
         run: |
-          python -m pip install "pip<24.1" "setuptools<70.0.0" wheel
+          # Clean, unconstrained installation now that ABIs match
+          python -m pip install --upgrade pip setuptools wheel
           python -m pip install "cython<3.0" buildozer
-          python -m pip install "virtualenv<20.25.0"
 
       - name: Build Android APK
-        env:
-          P4A_ENABLE_PY3: 1
-          # This forces ALL nested pip commands to obey these downgrades
-          PIP_CONSTRAINT: ${{ github.workspace }}/pip-constraints.txt
         run: |
-          echo "pip<24.1" > ${{ github.workspace }}/pip-constraints.txt
-          echo "setuptools<70.0.0" >> ${{ github.workspace }}/pip-constraints.txt
           buildozer appclean
           buildozer -v android debug
 
