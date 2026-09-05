@@ -17,7 +17,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.11.8"
 
       - name: Set up OpenJDK 17
         uses: actions/setup-java@v4
@@ -36,7 +36,7 @@ jobs:
       - name: Purge cached environments
         run: |
           rm -rf .buildozer
-          rm -rf ~/.buildozer   # <-- This nukes the hidden global toolchain cache
+          rm -rf ~/.buildozer
           rm -f requirements.txt
 
       - name: Install build tools
