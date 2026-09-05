@@ -7,8 +7,8 @@ source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas
 version = 1.0
 
-# Forcefully tell p4a to use python3 with the 3.11 recipe
-requirements = python3==3.11.8,kivy
+# Clean default requirements to prevent version collisions
+requirements = python3,kivy
 
 orientation = portrait
 fullscreen = 0
