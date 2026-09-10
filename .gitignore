@@ -1,4 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Buildozer / Android build files
 .buildozer/
 bin/
-*.pyc
-__pycache__/
+
+# Build logs
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
