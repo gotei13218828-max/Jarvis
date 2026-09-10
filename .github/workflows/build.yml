@@ -70,7 +70,6 @@ jobs:
 
       - name: Build Jarvis APK
         run: |
-          buildozer android clean
           buildozer android debug
 
       - name: Check APK
