@@ -70,6 +70,8 @@ jobs:
 
       - name: Build Jarvis APK
         run: |
+          rm -rf .buildozer
+          rm -rf bin
           buildozer android debug
 
       - name: Check APK
