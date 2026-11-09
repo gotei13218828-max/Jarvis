@@ -22,3 +22,15 @@ env/
 # OS files
 .DS_Store
 Thumbs.db
+# Local AI engine and build files
+/llama.cpp/
+
+# Private user memory
+/jarvis_core/memory/memories.json
+
+# Local backups
+/backups/
+
+# Python cache
+__pycache__/
+*.pyc
