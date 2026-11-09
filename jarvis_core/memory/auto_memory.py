@@ -20,8 +20,9 @@ SENSITIVE_PATTERNS = [
 ]
 
 MEMORY_PATTERNS = [
-    r"\bmy favourite\b",
-    r"\bmy favorite\b",
+    r"\bremember that\b",
+    r"\bfrom now on\b",
+    r"\bgoing forward\b",
     r"\bi prefer\b",
     r"\bi like\b",
     r"\bi love\b",
@@ -29,9 +30,6 @@ MEMORY_PATTERNS = [
     r"\bi am working on\b",
     r"\bi am building\b",
     r"\bmy project is\b",
-    r"\bremember that\b",
-    r"\bfrom now on\b",
-    r"\bgoing forward\b",
 ]
 
 
@@ -53,6 +51,10 @@ def extract_memory(message):
         return False
 
     if is_sensitive(message):
+        return False
+
+    # Never save questions as memories.
+    if message.endswith("?"):
         return False
 
     # Detect explicit preference changes.
@@ -78,7 +80,6 @@ def extract_memory(message):
             if normalize(memory.get("content", "")) == old_content
         ]
 
-        # Update only when exactly one old memory matches.
         if len(candidates) != 1:
             return False
 
@@ -86,7 +87,6 @@ def extract_memory(message):
 
         new_content = f"I prefer {new_preference}."
 
-        # Don't create a duplicate if the new preference exists.
         for i, memory in enumerate(memories):
             if i != index and normalize(
                 memory.get("content", "")
@@ -99,7 +99,7 @@ def extract_memory(message):
             old_memory.get("category", "automatic"),
         )
 
-    # Save new information without overwriting existing memories.
+    # Save only explicit memory statements.
     if any(
         re.search(pattern, message, re.IGNORECASE)
         for pattern in MEMORY_PATTERNS
