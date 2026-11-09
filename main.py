@@ -1,3 +1,4 @@
+
 import threading
 
 from kivy.app import App
@@ -8,8 +9,32 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
+from kivy.graphics import Color, RoundedRectangle
 
 from jarvis_core.brain import ask_jarvis
+
+
+class MessageInput(TextInput):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        with self.canvas.before:
+            Color(0.08, 0.10, 0.15, 1)
+            self.background_shape = RoundedRectangle(
+                pos=self.pos,
+                size=self.size,
+                radius=[dp(14)]
+            )
+
+        self.bind(
+            pos=self.update_background,
+            size=self.update_background
+        )
+
+    def update_background(self, *args):
+        self.background_shape.pos = self.pos
+        self.background_shape.size = self.size
 
 
 class JarvisInterface(BoxLayout):
@@ -60,12 +85,20 @@ class JarvisInterface(BoxLayout):
 
         self.scroll.add_widget(self.message_label)
 
-        self.input = TextInput(
-            hint_text="Message Jarvis...",
+        # Message composer
+        self.input = MessageInput(
+            hint_text="Type your message here...",
             multiline=False,
             size_hint_y=None,
-            height=dp(50),
-            font_size=dp(16)
+            height=dp(52),
+            font_size=dp(16),
+            padding=[dp(12), dp(15), dp(12), dp(10)],
+            foreground_color=(1, 1, 1, 1),
+            hint_text_color=(0.55, 0.60, 0.68, 1),
+            cursor_color=(0.2, 0.65, 1, 1),
+            background_normal="",
+            background_active="",
+            background_color=(0, 0, 0, 0)
         )
 
         self.input.bind(
@@ -75,7 +108,12 @@ class JarvisInterface(BoxLayout):
         self.send_button = Button(
             text="SEND",
             size_hint=(None, None),
-            size=(dp(90), dp(50))
+            size=(dp(85), dp(52)),
+            background_normal="",
+            background_down="",
+            background_color=(0.05, 0.38, 0.75, 1),
+            color=(1, 1, 1, 1),
+            bold=True
         )
 
         self.send_button.bind(
@@ -84,7 +122,7 @@ class JarvisInterface(BoxLayout):
 
         input_row = BoxLayout(
             size_hint_y=None,
-            height=dp(55),
+            height=dp(58),
             spacing=dp(8)
         )
 
@@ -125,7 +163,6 @@ class JarvisInterface(BoxLayout):
         self.send_button.disabled = True
 
         self.add_message("YOU", message)
-
         self.status.text = "JARVIS IS THINKING..."
 
         threading.Thread(
@@ -163,3 +200,4 @@ class JarvisApp(App):
 
 if __name__ == "__main__":
     JarvisApp().run()
+

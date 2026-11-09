@@ -1,3 +1,4 @@
+
 import json
 import re
 import urllib.request
@@ -69,6 +70,44 @@ def find_relevant_memory(message):
     return None
 
 
+def format_memory_response(memory):
+    content = memory.get("content", "").strip()
+
+    # Remove common memory instruction prefixes.
+    content = re.sub(
+        r"^(remember that|from now on|going forward)\s+",
+        "",
+        content,
+        flags=re.IGNORECASE
+    )
+
+    # Convert simple personal preference statements.
+    match = re.match(
+        r"my favourite (.+?) is (.+)[.!]?$",
+        content,
+        flags=re.IGNORECASE
+    )
+
+    if match:
+        subject = match.group(1).strip()
+        value = match.group(2).strip().rstrip(".!?")
+        return f"Your favourite {subject} is {value}."
+
+    match = re.match(
+        r"my favorite (.+?) is (.+)[.!]?$",
+        content,
+        flags=re.IGNORECASE
+    )
+
+    if match:
+        subject = match.group(1).strip()
+        value = match.group(2).strip().rstrip(".!?")
+        return f"Your favorite {subject} is {value}."
+
+    # General memory fallback.
+    return f"I remember that {content}"
+
+
 def ask_jarvis(message):
 
     # 1. Process explicit memory instructions first.
@@ -84,7 +123,7 @@ def ask_jarvis(message):
     memory = find_relevant_memory(message)
 
     if memory:
-        return f"I remember: {memory['content']}"
+        return format_memory_response(memory)
 
     # 3. Load saved information.
     memories = get_memories()
@@ -149,3 +188,4 @@ def ask_jarvis(message):
 
     except TimeoutError:
         return "I'm taking too long to respond. Please try again."
+
