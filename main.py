@@ -1,9 +1,11 @@
 
+
 import threading
 
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.metrics import dp
+from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
@@ -85,7 +87,7 @@ class JarvisInterface(BoxLayout):
 
         self.scroll.add_widget(self.message_label)
 
-        # Message composer
+        # Message typing field
         self.input = MessageInput(
             hint_text="Type your message here...",
             multiline=False,
@@ -163,6 +165,7 @@ class JarvisInterface(BoxLayout):
         self.send_button.disabled = True
 
         self.add_message("YOU", message)
+
         self.status.text = "JARVIS IS THINKING..."
 
         threading.Thread(
@@ -192,6 +195,10 @@ class JarvisInterface(BoxLayout):
 
 
 class JarvisApp(App):
+
+    def on_start(self):
+        # Resize the app when the Android keyboard opens.
+        Window.softinput_mode = "resize"
 
     def build(self):
         self.title = "Jarvis"
