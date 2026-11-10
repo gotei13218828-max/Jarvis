@@ -1,5 +1,3 @@
-
-
 import threading
 
 from kivy.app import App
@@ -11,32 +9,8 @@ from kivy.uix.label import Label
 from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
-from kivy.graphics import Color, RoundedRectangle
 
 from jarvis_core.brain import ask_jarvis
-
-
-class MessageInput(TextInput):
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-        with self.canvas.before:
-            Color(0.08, 0.10, 0.15, 1)
-            self.background_shape = RoundedRectangle(
-                pos=self.pos,
-                size=self.size,
-                radius=[dp(14)]
-            )
-
-        self.bind(
-            pos=self.update_background,
-            size=self.update_background
-        )
-
-    def update_background(self, *args):
-        self.background_shape.pos = self.pos
-        self.background_shape.size = self.size
 
 
 class JarvisInterface(BoxLayout):
@@ -44,7 +18,7 @@ class JarvisInterface(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(
             orientation="vertical",
-            padding=dp(15),
+            padding=[dp(15), dp(15), dp(15), dp(8)],
             spacing=dp(10),
             **kwargs
         )
@@ -69,7 +43,8 @@ class JarvisInterface(BoxLayout):
 
         self.scroll = ScrollView(
             do_scroll_x=False,
-            bar_width=dp(3)
+            bar_width=dp(3),
+            size_hint=(1, 1)
         )
 
         self.message_label = Label(
@@ -87,20 +62,20 @@ class JarvisInterface(BoxLayout):
 
         self.scroll.add_widget(self.message_label)
 
-        # Message typing field
-        self.input = MessageInput(
+        # Native Kivy input field
+        self.input = TextInput(
             hint_text="Type your message here...",
             multiline=False,
-            size_hint_y=None,
-            height=dp(52),
+            size_hint=(1, 1),
             font_size=dp(16),
-            padding=[dp(12), dp(15), dp(12), dp(10)],
+            padding=[dp(12), dp(14)],
             foreground_color=(1, 1, 1, 1),
-            hint_text_color=(0.55, 0.60, 0.68, 1),
+            hint_text_color=(0.75, 0.78, 0.84, 1),
             cursor_color=(0.2, 0.65, 1, 1),
             background_normal="",
             background_active="",
-            background_color=(0, 0, 0, 0)
+            background_color=(0.08, 0.10, 0.15, 1),
+            cursor_width=dp(2)
         )
 
         self.input.bind(
@@ -109,8 +84,8 @@ class JarvisInterface(BoxLayout):
 
         self.send_button = Button(
             text="SEND",
-            size_hint=(None, None),
-            size=(dp(85), dp(52)),
+            size_hint=(None, 1),
+            width=dp(85),
             background_normal="",
             background_down="",
             background_color=(0.05, 0.38, 0.75, 1),
@@ -122,19 +97,21 @@ class JarvisInterface(BoxLayout):
             on_press=self.send_message
         )
 
-        input_row = BoxLayout(
+        # Fixed-height composer row
+        self.input_row = BoxLayout(
+            orientation="horizontal",
             size_hint_y=None,
             height=dp(58),
             spacing=dp(8)
         )
 
-        input_row.add_widget(self.input)
-        input_row.add_widget(self.send_button)
+        self.input_row.add_widget(self.input)
+        self.input_row.add_widget(self.send_button)
 
         self.add_widget(self.title)
         self.add_widget(self.status)
         self.add_widget(self.scroll)
-        self.add_widget(input_row)
+        self.add_widget(self.input_row)
 
     def update_message_size(self, instance, width):
         instance.text_size = (width, None)
@@ -146,10 +123,7 @@ class JarvisInterface(BoxLayout):
         self.conversation += f"{speaker}:\n{message}\n\n"
         self.message_label.text = self.conversation
 
-        Clock.schedule_once(
-            self.scroll_to_bottom,
-            0.1
-        )
+        Clock.schedule_once(self.scroll_to_bottom, 0.1)
 
     def scroll_to_bottom(self, dt):
         self.scroll.scroll_y = 0
@@ -165,7 +139,6 @@ class JarvisInterface(BoxLayout):
         self.send_button.disabled = True
 
         self.add_message("YOU", message)
-
         self.status.text = "JARVIS IS THINKING..."
 
         threading.Thread(
@@ -177,7 +150,6 @@ class JarvisInterface(BoxLayout):
     def process_message(self, message):
         try:
             response = ask_jarvis(message)
-
         except Exception as error:
             response = f"Something went wrong: {error}"
 
@@ -196,15 +168,14 @@ class JarvisInterface(BoxLayout):
 
 class JarvisApp(App):
 
-    def on_start(self):
-        # Resize the app when the Android keyboard opens.
-        Window.softinput_mode = "resize"
-
     def build(self):
         self.title = "Jarvis"
+
+        # Keep the focused input field above Android's keyboard.
+        Window.softinput_mode = "below_target"
+
         return JarvisInterface()
 
 
 if __name__ == "__main__":
     JarvisApp().run()
-
