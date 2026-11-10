@@ -110,6 +110,24 @@ def format_memory_response(memory):
 
 def ask_jarvis(message):
 
+    # Handle identity questions directly.
+    normalized_message = re.sub(
+        r"[^a-z0-9\s]", "", message.lower()
+    ).strip()
+
+    if (
+        re.search(r"\bwho are (you|u)\b", normalized_message)
+        or normalized_message in {
+            "introduce yourself",
+            "tell me about yourself"
+        }
+    ):
+        return (
+            "I'm Jarvis, your personal AI assistant. "
+            "I use Qwen as my language model and run through "
+            "the Jarvis app on your phone. How can I help?"
+        )
+
     # 1. Process explicit memory instructions first.
     try:
         memory_updated = extract_memory(message)
