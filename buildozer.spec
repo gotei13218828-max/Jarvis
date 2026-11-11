@@ -17,7 +17,7 @@ orientation = portrait
 android.permissions = INTERNET
 
 android.api = 34
-android.minapi = 24
+android.minapi = 26
 
 android.archs = arm64-v8a
 
