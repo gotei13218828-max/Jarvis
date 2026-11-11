@@ -34,3 +34,10 @@ Thumbs.db
 # Python cache
 __pycache__/
 *.pyc
+
+# Supabase and private authentication data
+.env
+.env.*
+!.env.example
+supabase_secrets.json
+auth_session.json

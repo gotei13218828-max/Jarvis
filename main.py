@@ -11,6 +11,9 @@ from kivy.uix.button import Button
 from kivy.uix.scrollview import ScrollView
 
 from jarvis_core.brain import ask_jarvis
+from jarvis_core.cloud.keystore_diagnostic import (
+    run_keystore_diagnostic,
+)
 
 
 class JarvisInterface(BoxLayout):
@@ -25,6 +28,7 @@ class JarvisInterface(BoxLayout):
 
         self.conversation = "JARVIS INITIALIZED\n\n"
         self.busy = False
+        self.diagnostic_running = False
 
         self.title = Label(
             text="J.A.R.V.I.S",
@@ -39,6 +43,20 @@ class JarvisInterface(BoxLayout):
             font_size=dp(13),
             size_hint_y=None,
             height=dp(30)
+        )
+
+        self.test_button = Button(
+            text="TEST ANDROID KEYSTORE",
+            size_hint_y=None,
+            height=dp(42),
+            background_normal="",
+            background_color=(0.12, 0.35, 0.55, 1),
+            color=(1, 1, 1, 1),
+            bold=True
+        )
+
+        self.test_button.bind(
+            on_press=self.start_keystore_test
         )
 
         self.scroll = ScrollView(
@@ -62,7 +80,6 @@ class JarvisInterface(BoxLayout):
 
         self.scroll.add_widget(self.message_label)
 
-        # Native Kivy input field
         self.input = TextInput(
             hint_text="Type your message here...",
             multiline=False,
@@ -97,7 +114,6 @@ class JarvisInterface(BoxLayout):
             on_press=self.send_message
         )
 
-        # Fixed-height composer row
         self.input_row = BoxLayout(
             orientation="horizontal",
             size_hint_y=None,
@@ -110,6 +126,7 @@ class JarvisInterface(BoxLayout):
 
         self.add_widget(self.title)
         self.add_widget(self.status)
+        self.add_widget(self.test_button)
         self.add_widget(self.scroll)
         self.add_widget(self.input_row)
 
@@ -127,6 +144,46 @@ class JarvisInterface(BoxLayout):
 
     def scroll_to_bottom(self, dt):
         self.scroll.scroll_y = 0
+
+    def start_keystore_test(self, instance):
+        if self.diagnostic_running:
+            return
+
+        self.diagnostic_running = True
+        self.test_button.disabled = True
+        self.status.text = "TESTING ANDROID KEYSTORE..."
+
+        threading.Thread(
+            target=self.process_keystore_test,
+            daemon=True
+        ).start()
+
+    def process_keystore_test(self):
+        try:
+            result = run_keystore_diagnostic()
+        except Exception as error:
+            result = (
+                "KEYSTORE TEST FAILED: "
+                + type(error).__name__
+                + ": "
+                + str(error)
+            )
+
+        Clock.schedule_once(
+            lambda dt: self.finish_keystore_test(result),
+            0
+        )
+
+    def finish_keystore_test(self, result):
+        self.add_message("KEYSTORE DIAGNOSTIC", result)
+
+        if "PASSED" in result:
+            self.status.text = "ANDROID KEYSTORE • VERIFIED"
+        else:
+            self.status.text = "KEYSTORE TEST • FAILED"
+
+        self.test_button.disabled = False
+        self.diagnostic_running = False
 
     def send_message(self, instance):
         message = self.input.text.strip()
@@ -170,8 +227,6 @@ class JarvisApp(App):
 
     def build(self):
         self.title = "Jarvis"
-
-        # Keep the focused input field above Android's keyboard.
         Window.softinput_mode = "below_target"
 
         return JarvisInterface()
