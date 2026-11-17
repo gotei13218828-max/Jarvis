@@ -14,11 +14,11 @@ def _request(endpoint, payload, access_token=None):
 
     headers = {
         "apikey": SUPABASE_PUBLISHABLE_KEY,
-        "Authorization": "Bearer " + (
-            access_token or SUPABASE_PUBLISHABLE_KEY
-        ),
         "Content-Type": "application/json",
     }
+
+    if access_token:
+        headers["Authorization"] = "Bearer " + access_token
 
     data = json.dumps(payload).encode("utf-8")
 
