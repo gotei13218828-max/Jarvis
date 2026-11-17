@@ -1,4 +1,3 @@
-
 import json
 import re
 import urllib.request
@@ -7,203 +6,136 @@ import urllib.error
 from .personality import SYSTEM_PROMPT
 from .memory.manager import get_memories
 from .memory.auto_memory import extract_memory
+from .cloud.session import session_manager
 
-API_URL = "http://127.0.0.1:8080/v1/chat/completions"
+LOCAL_API_URL = "http://127.0.0.1:8080/v1/chat/completions"
+CLOUD_API_URL = "https://little-rain-cada.gotei13218828.workers.dev/chat"
 
 STOP_WORDS = {
-    "what", "is", "my", "the", "a", "an", "do", "i",
-    "you", "your", "me", "and", "of", "to", "in",
-    "tell", "about", "please", "can", "are", "was",
-    "how", "does", "did", "it", "this", "that",
-    "remember", "preference", "preferences"
+    "what", "is", "my", "the", "a", "an", "do", "i", "you", "your", "me",
+    "and", "of", "to", "in", "tell", "about", "please", "can", "are", "was",
+    "how", "does", "did", "it", "this", "that", "remember", "preference", "preferences"
 }
 
 
 def normalize_words(text):
-    return {
-        word for word in re.findall(r"\w+", text.lower())
-        if word not in STOP_WORDS
-    }
+    return {word for word in re.findall(r"\w+", text.lower()) if word not in STOP_WORDS}
 
 
 def find_relevant_memory(message):
     query_words = normalize_words(message)
-
     if not query_words:
         return None
-
-    memories = get_memories()
-    scored_memories = []
-
-    for memory in memories:
-        content_words = normalize_words(
-            memory.get("content", "")
-        )
-
-        if not content_words:
-            continue
-
-        overlap = query_words.intersection(content_words)
-        score = len(overlap) / len(query_words)
-
-        scored_memories.append((score, memory))
-
-    scored_memories.sort(
-        key=lambda item: item[0],
-        reverse=True
-    )
-
-    if not scored_memories:
+    scored = []
+    for memory in get_memories():
+        content_words = normalize_words(memory.get("content", ""))
+        if content_words:
+            overlap = query_words.intersection(content_words)
+            scored.append((len(overlap) / len(query_words), memory))
+    scored.sort(key=lambda item: item[0], reverse=True)
+    if not scored:
         return None
-
-    best_score, best_memory = scored_memories[0]
-
-    second_score = (
-        scored_memories[1][0]
-        if len(scored_memories) > 1
-        else 0
-    )
-
-    if best_score >= 0.6 and best_score > second_score:
-        return best_memory
-
-    return None
+    best_score, best_memory = scored[0]
+    second_score = scored[1][0] if len(scored) > 1 else 0
+    return best_memory if best_score >= 0.6 and best_score > second_score else None
 
 
 def format_memory_response(memory):
     content = memory.get("content", "").strip()
-
-    # Remove common memory instruction prefixes.
-    content = re.sub(
-        r"^(remember that|from now on|going forward)\s+",
-        "",
-        content,
-        flags=re.IGNORECASE
-    )
-
-    # Convert simple personal preference statements.
-    match = re.match(
-        r"my favourite (.+?) is (.+)[.!]?$",
-        content,
-        flags=re.IGNORECASE
-    )
-
+    content = re.sub(r"^(remember that|from now on|going forward)\s+", "", content, flags=re.IGNORECASE)
+    match = re.match(r"my favou?rite (.+?) is (.+)[.!]?$", content, flags=re.IGNORECASE)
     if match:
-        subject = match.group(1).strip()
-        value = match.group(2).strip().rstrip(".!?")
-        return f"Your favourite {subject} is {value}."
-
-    match = re.match(
-        r"my favorite (.+?) is (.+)[.!]?$",
-        content,
-        flags=re.IGNORECASE
-    )
-
-    if match:
-        subject = match.group(1).strip()
-        value = match.group(2).strip().rstrip(".!?")
-        return f"Your favorite {subject} is {value}."
-
-    # General memory fallback.
+        return f"Your favourite {match.group(1).strip()} is {match.group(2).strip().rstrip('.!?')}."
     return f"I remember that {content}"
 
 
-def ask_jarvis(message):
+def _build_messages(message, history=None):
+    memory_context = ""
+    memories = get_memories()
+    if memories:
+        memory_context = "\n\nSAVED USER FACTS:\n" + "".join(f"- {item.get('content', '')}\n" for item in memories)
+    system = SYSTEM_PROMPT + memory_context + "\nUse saved facts when relevant. Do not invent personal information."
+    messages = [{"role": "system", "content": system}]
+    if isinstance(history, list):
+        for item in history[-12:]:
+            if isinstance(item, dict) and item.get("role") in ("user", "assistant") and isinstance(item.get("content"), str):
+                messages.append({"role": item["role"], "content": item["content"][:4000]})
+    messages.append({"role": "user", "content": message})
+    return messages
 
-    # Handle identity questions directly.
-    normalized_message = re.sub(
-        r"[^a-z0-9\s]", "", message.lower()
-    ).strip()
 
-    if (
-        re.search(r"\bwho are (you|u)\b", normalized_message)
-        or normalized_message in {
-            "introduce yourself",
-            "tell me about yourself"
-        }
-    ):
-        return (
-            "I'm Jarvis, your personal AI assistant. "
-            "I use Qwen as my language model and run through "
-            "the Jarvis app on your phone. How can I help?"
-        )
+def _extract_text(result):
+    if isinstance(result, dict):
+        choices = result.get("choices")
+        if isinstance(choices, list) and choices:
+            message = choices[0].get("message", {})
+            if isinstance(message, dict) and isinstance(message.get("content"), str):
+                return message["content"].strip()
+        for key in ("response", "output", "content"):
+            if isinstance(result.get(key), str):
+                return result[key].strip()
+    raise ValueError("Unexpected AI response format")
 
-    # 1. Process explicit memory instructions first.
+
+def _post_json(url, payload, headers=None, timeout=30):
+    request_headers = {"Content-Type": "application/json"}
+    if headers:
+        request_headers.update(headers)
+    request = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=request_headers, method="POST")
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _ask_cloud(messages):
+    token = session_manager.get_access_token()
+    if not token:
+        raise PermissionError("Sign in is required for Cloud AI")
+    payload = {"messages": messages, "max_tokens": 512}
+    return _extract_text(_post_json(CLOUD_API_URL, payload, {"Authorization": "Bearer " + token}, timeout=30))
+
+
+def _ask_local(messages):
+    payload = {"messages": messages, "temperature": 0.2, "max_tokens": 180}
+    return _extract_text(_post_json(LOCAL_API_URL, payload, timeout=60))
+
+
+def ask_jarvis(message, history=None):
+    normalized = re.sub(r"[^a-z0-9\s]", "", message.lower()).strip()
+    if re.search(r"\bwho are (you|u)\b", normalized) or normalized in {"introduce yourself", "tell me about yourself"}:
+        return "I'm Jarvis, your personal AI assistant. I can use available cloud AI when you're signed in, with your phone's local model as a fallback. How can I help?"
+
     try:
-        memory_updated = extract_memory(message)
-
-        if memory_updated:
+        if extract_memory(message):
             return "Your memory has been updated successfully."
     except Exception:
         pass
 
-    # 2. Recall relevant information.
     memory = find_relevant_memory(message)
-
     if memory:
         return format_memory_response(memory)
 
-    # 3. Load saved information.
-    memories = get_memories()
-    memory_context = ""
+    messages = _build_messages(message, history)
+    cloud_error = None
+    if session_manager.is_authenticated:
+        try:
+            return _ask_cloud(messages)
+        except Exception as error:
+            cloud_error = error
+            # Refresh the stored Supabase session once after an authorization failure.
+            if isinstance(error, urllib.error.HTTPError) and error.code == 401:
+                try:
+                    session_manager.restore_session(saved_session=session_manager.session)
+                    return _ask_cloud(messages)
+                except Exception as retry_error:
+                    cloud_error = retry_error
 
-    if memories:
-        memory_context = "\n\nSAVED USER FACTS:\n"
-
-        for memory in memories:
-            memory_context += f"- {memory['content']}\n"
-
-    full_system_prompt = (
-        SYSTEM_PROMPT
-        + memory_context
-        + "\nUse saved facts when relevant. "
-          "Do not invent personal information."
-    )
-
-    # 4. Prepare local AI request.
-    payload = {
-        "messages": [
-            {
-                "role": "system",
-                "content": full_system_prompt
-            },
-            {
-                "role": "user",
-                "content": message
-            }
-        ],
-        "temperature": 0.1,
-        "max_tokens": 120
-    }
-
-    data = json.dumps(payload).encode("utf-8")
-
-    request = urllib.request.Request(
-        API_URL,
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="POST"
-    )
-
-    # 5. Contact local Qwen server.
     try:
-        with urllib.request.urlopen(
-            request,
-            timeout=60
-        ) as response:
-
-            result = json.loads(
-                response.read().decode("utf-8")
-            )
-
-        return result["choices"][0]["message"]["content"].strip()
-
-    except urllib.error.URLError as error:
-        return f"Connection error: {error}"
-
+        return _ask_local(messages)
+    except urllib.error.URLError:
+        if cloud_error:
+            return "Cloud AI is unavailable and the local AI server isn't reachable. Please check your connection and local Jarvis server."
+        return "The local AI server isn't reachable. Start the Jarvis local model server and try again."
+    except TimeoutError:
+        return "The local AI is taking too long to respond. Please try again."
     except (KeyError, IndexError, ValueError):
         return "I couldn't process that response."
-
-    except TimeoutError:
-        return "I'm taking too long to respond. Please try again."
-
