@@ -7,7 +7,7 @@ package.domain = org.jarvis
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,json
 source.exclude_dirs = backups,llama.cpp
-version = 1.0
+version = 1.0.1
 
 requirements = python3,kivy==2.3.1
 p4a.branch = develop
@@ -18,13 +18,14 @@ android.permissions = INTERNET
 
 android.api = 34
 android.minapi = 24
+android.numeric_version = 2
 
 android.archs = arm64-v8a
 
 android.accept_sdk_license = True
 
 android.debug_artifact = apk
-android.release_artifact = aab
+android.release_artifact = apk
 
 
 [buildozer]
