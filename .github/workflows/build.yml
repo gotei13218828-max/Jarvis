@@ -44,7 +44,13 @@ jobs:
           sudo apt-get install -y \
             git zip unzip autoconf automake autopoint libtool \
             pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev \
-            libtinfo5 cmake libffi-dev libssl-dev liblzma-dev
+            libtinfo5 cmake libffi-dev libssl-dev liblzma-dev librsvg2-bin
+
+      - name: Generate Android launcher icon
+        run: |
+          mkdir -p assets
+          rsvg-convert -w 512 -h 512 assets/jarvis_icon.svg > assets/jarvis_icon.png
+          file assets/jarvis_icon.png
 
       - name: Install Python build tools
         run: |
@@ -63,7 +69,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: Jarvis-v1-APK
+          name: Jarvis-v1.0.3-Debug
           path: bin/*debug*.apk
           if-no-files-found: error
 
@@ -98,6 +104,6 @@ jobs:
       - name: Upload signed release APK
         uses: actions/upload-artifact@v4
         with:
-          name: Jarvis-v1.0.1-Release
+          name: Jarvis-v1.0.3-Release
           path: bin/*release*.apk
           if-no-files-found: error
