@@ -16,6 +16,7 @@ from kivy.uix.widget import Widget
 
 from jarvis_core.brain import ask_jarvis
 from jarvis_core.cloud.session import session_manager
+from jarvis_core.cloud.keystore_diagnostic import run_keystore_diagnostic
 
 
 BG = (0.0, 0.0, 0.0, 1)
@@ -605,6 +606,10 @@ class JarvisInterface(BoxLayout):
         success = False
         message = ""
         try:
+            diagnostic = run_keystore_diagnostic()
+            if "ANDROID KEYSTORE: ENCRYPTION AND DECRYPTION PASSED" not in diagnostic:
+                raise RuntimeError(diagnostic)
+
             if mode == "login":
                 session_manager.sign_in(email, password)
                 success = True

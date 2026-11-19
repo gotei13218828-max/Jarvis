@@ -7,7 +7,7 @@ package.domain = org.jarvis
 source.dir = .
 source.include_exts = py,png,jpg,jpeg,kv,atlas,json
 source.exclude_dirs = backups,llama.cpp
-version = 1.0.3.3
+version = 1.0.3.4
 
 requirements = python3,kivy==2.3.1,pyjnius,certifi
 p4a.branch = develop
@@ -20,7 +20,7 @@ android.permissions = INTERNET
 
 android.api = 34
 android.minapi = 24
-android.numeric_version = 7
+android.numeric_version = 8
 
 android.archs = arm64-v8a
 
