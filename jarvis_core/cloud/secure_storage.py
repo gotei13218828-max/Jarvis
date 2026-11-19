@@ -161,8 +161,9 @@ def save_session(session):
     except SecureStorageError:
         raise
     except Exception as error:
+        error_type = type(error).__name__
         raise SecureStorageError(
-            "Could not securely save the session."
+            f"Could not securely save the session [{error_type}]."
         ) from error
 
 
