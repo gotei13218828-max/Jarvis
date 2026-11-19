@@ -8,6 +8,7 @@ from .secure_storage import (
     _java_bytes,
     _python_bytes,
     _get_storage_path,
+    _java_string_array,
 )
 
 
@@ -50,8 +51,8 @@ def run_keystore_diagnostic():
 
         builder = Builder(TEST_ALIAS, purposes)
         # PyJNIus converts Python lists to Java String[] arguments.
-        builder.setBlockModes(["GCM"])
-        builder.setEncryptionPaddings(["NoPadding"])
+        builder.setBlockModes(_java_string_array(autoclass, ("GCM",)))
+        builder.setEncryptionPaddings(_java_string_array(autoclass, ("NoPadding",)))
         builder.setKeySize(256)
         builder.setRandomizedEncryptionRequired(True)
 

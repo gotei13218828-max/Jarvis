@@ -60,6 +60,20 @@ def _get_keystore():
     return store, classes
 
 
+def _java_string_array(autoclass, values):
+    """Build an explicitly typed Java String array."""
+    StringClass = autoclass("java.lang.Class")
+    JavaArray = autoclass("java.lang.reflect.Array")
+
+    component = StringClass.forName("java.lang.String")
+    result = JavaArray.newInstance(component, len(values))
+
+    for index, value in enumerate(values):
+        JavaArray.set(result, index, value)
+
+    return result
+
+
 def _get_or_create_key():
     store, classes = _get_keystore()
     autoclass = classes["autoclass"]
@@ -83,8 +97,8 @@ def _get_or_create_key():
     builder = Builder(KEY_ALIAS, purposes)
 
     # PyJNIus converts Python lists to Java String[] arguments.
-    builder.setBlockModes(["GCM"])
-    builder.setEncryptionPaddings(["NoPadding"])
+    builder.setBlockModes(_java_string_array(autoclass, ("GCM",)))
+    builder.setEncryptionPaddings(_java_string_array(autoclass, ("NoPadding",)))
     builder.setKeySize(256)
     builder.setRandomizedEncryptionRequired(True)
 
