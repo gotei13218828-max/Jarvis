@@ -23,6 +23,7 @@ def run_keystore_diagnostic():
     try:
         classes = _android_classes()
         autoclass = classes["autoclass"]
+        cast = classes["cast"]
 
         KeyStore = autoclass("java.security.KeyStore")
         store = KeyStore.getInstance("AndroidKeyStore")
@@ -63,7 +64,7 @@ def run_keystore_diagnostic():
         )
         generator.init(builder.build())
         stage = "generating diagnostic AES key"
-        key = generator.generateKey()
+        key = cast("java.security.Key", generator.generateKey())
 
         original = json.dumps({
             "test": "Jarvis Keystore",

@@ -18,13 +18,13 @@ class SecureStorageUnavailable(SecureStorageError):
 
 def _android_classes():
     try:
-        from jnius import autoclass
+        from jnius import autoclass, cast
     except ImportError as error:
         raise SecureStorageUnavailable(
             "Android Keystore is unavailable in this environment."
         ) from error
 
-    return {"autoclass": autoclass}
+    return {"autoclass": autoclass, "cast": cast}
 
 
 def _get_storage_path():
@@ -122,11 +122,13 @@ def save_session(session):
     _validate_session(session)
 
     try:
-        autoclass = _android_classes()["autoclass"]
+        classes = _android_classes()
+        autoclass = classes["autoclass"]
+        cast = classes["cast"]
         Cipher = autoclass("javax.crypto.Cipher")
 
         payload = json.dumps(session).encode("utf-8")
-        key = _get_or_create_key()
+        key = cast("java.security.Key", _get_or_create_key())
 
         cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.ENCRYPT_MODE, key)
@@ -203,12 +205,13 @@ def load_session():
             )
 
         autoclass = classes["autoclass"]
+        cast = classes["cast"]
         Cipher = autoclass("javax.crypto.Cipher")
         GCMParameterSpec = autoclass(
             "javax.crypto.spec.GCMParameterSpec"
         )
 
-        key = store.getKey(KEY_ALIAS, None)
+        key = cast("java.security.Key", store.getKey(KEY_ALIAS, None))
         cipher = Cipher.getInstance("AES/GCM/NoPadding")
 
         cipher.init(
