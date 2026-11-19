@@ -18,13 +18,13 @@ class SecureStorageUnavailable(SecureStorageError):
 
 def _android_classes():
     try:
-        from jnius import autoclass, jarray
+        from jnius import autoclass
     except ImportError as error:
         raise SecureStorageUnavailable(
             "Android Keystore is unavailable in this environment."
         ) from error
 
-    return {"autoclass": autoclass, "jarray": jarray}
+    return {"autoclass": autoclass}
 
 
 def _get_storage_path():
@@ -80,11 +80,11 @@ def _get_or_create_key():
         | KeyProperties.PURPOSE_DECRYPT
     )
 
-    StringArray = classes["jarray"]("java.lang.String")
     builder = Builder(KEY_ALIAS, purposes)
 
-    builder.setBlockModes(StringArray(["GCM"]))
-    builder.setEncryptionPaddings(StringArray(["NoPadding"]))
+    # PyJNIus converts Python lists to Java String[] arguments.
+    builder.setBlockModes(["GCM"])
+    builder.setEncryptionPaddings(["NoPadding"])
     builder.setKeySize(256)
     builder.setRandomizedEncryptionRequired(True)
 
@@ -95,11 +95,8 @@ def _get_or_create_key():
 
 
 def _java_bytes(data):
-    ByteArray = _android_classes()["jarray"]("b")
-    return ByteArray([
-        value if value < 128 else value - 256
-        for value in data
-    ])
+    # PyJNIus converts Python integer lists to Java byte[].
+    return [value if value < 128 else value - 256 for value in data]
 
 
 def _python_bytes(data):

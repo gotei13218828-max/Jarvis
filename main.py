@@ -56,6 +56,22 @@ class RoundedBox(BoxLayout):
         )
 
 
+class PillButton(Button):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        with self.canvas.before:
+            self._pill_color = Color(*GREEN)
+            self._pill_shape = RoundedRectangle(
+                pos=self.pos, size=self.size, radius=[self.height / 2]
+            )
+        self.bind(pos=self._sync_pill, size=self._sync_pill)
+
+    def _sync_pill(self, *_):
+        self._pill_shape.pos = self.pos
+        self._pill_shape.size = self.size
+        self._pill_shape.radius = [self.height / 2]
+
+
 class StartupProgress(Widget):
     """A simple progress bar updated only when a startup milestone completes."""
 
@@ -348,15 +364,15 @@ class JarvisInterface(BoxLayout):
             input_type="text",
         )
         self.input.bind(on_text_validate=self.send_message)
-        self.send_button = Button(
+        self.send_button = PillButton(
             text="SEND",
             font_size=dp(11),
             size_hint=(None, 1),
-            width=dp(52),
+            width=dp(76),
             color=(0.0, 0.04, 0.02, 1),
             background_normal="",
             background_down="",
-            background_color=GREEN,
+            background_color=(0, 0, 0, 0),
         )
         self.send_button.bind(on_press=self.send_message)
         composer.add_widget(self.mic_button)
@@ -474,7 +490,7 @@ class JarvisInterface(BoxLayout):
         )
         content.add_widget(
             Label(
-                text="Local AI with optional secure cloud access",
+                text="Personal Private Assistant",
                 color=MUTED,
                 halign="center",
             )

@@ -48,10 +48,10 @@ def run_keystore_diagnostic():
             | KeyProperties.PURPOSE_DECRYPT
         )
 
-        StringArray = classes["jarray"]("java.lang.String")
         builder = Builder(TEST_ALIAS, purposes)
-        builder.setBlockModes(StringArray(["GCM"]))
-        builder.setEncryptionPaddings(StringArray(["NoPadding"]))
+        # PyJNIus converts Python lists to Java String[] arguments.
+        builder.setBlockModes(["GCM"])
+        builder.setEncryptionPaddings(["NoPadding"])
         builder.setKeySize(256)
         builder.setRandomizedEncryptionRequired(True)
 
