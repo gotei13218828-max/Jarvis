@@ -8,7 +8,6 @@ from .secure_storage import (
     _java_bytes,
     _python_bytes,
     _get_storage_path,
-    _java_string_array,
 )
 
 
@@ -19,6 +18,7 @@ TEST_FILENAME = "jarvis_keystore_diagnostic.enc"
 def run_keystore_diagnostic():
     test_path = None
     store = None
+    stage = "loading Android Keystore"
 
     try:
         classes = _android_classes()
@@ -50,16 +50,19 @@ def run_keystore_diagnostic():
         )
 
         builder = Builder(TEST_ALIAS, purposes)
-        # PyJNIus converts Python lists to Java String[] arguments.
-        builder.setBlockModes(_java_string_array(autoclass, ("GCM",)))
-        builder.setEncryptionPaddings(_java_string_array(autoclass, ("NoPadding",)))
+        stage = "setting AES-GCM block mode"
+        builder.setBlockModes("GCM")
+        stage = "setting NoPadding encryption padding"
+        builder.setEncryptionPaddings("NoPadding")
         builder.setKeySize(256)
         builder.setRandomizedEncryptionRequired(True)
 
+        stage = "initializing AES key generator"
         generator = KeyGenerator.getInstance(
             "AES", "AndroidKeyStore"
         )
         generator.init(builder.build())
+        stage = "generating diagnostic AES key"
         key = generator.generateKey()
 
         original = json.dumps({
@@ -67,6 +70,7 @@ def run_keystore_diagnostic():
             "value": "encryption_verified",
         }).encode("utf-8")
 
+        stage = "encrypting diagnostic payload"
         encryptor = Cipher.getInstance("AES/GCM/NoPadding")
         encryptor.init(Cipher.ENCRYPT_MODE, key)
 
@@ -78,6 +82,7 @@ def run_keystore_diagnostic():
         if len(iv) != 12:
             raise RuntimeError("Unexpected AES-GCM IV length.")
 
+        stage = "writing and reading diagnostic file"
         # Use a dedicated diagnostic file.
         test_path = _get_storage_path().with_name(TEST_FILENAME)
 
@@ -90,6 +95,7 @@ def run_keystore_diagnostic():
 
         stored = json.loads(test_path.read_text(encoding="utf-8"))
 
+        stage = "decrypting diagnostic payload"
         decryptor = Cipher.getInstance("AES/GCM/NoPadding")
         decryptor.init(
             Cipher.DECRYPT_MODE,
@@ -117,6 +123,7 @@ def run_keystore_diagnostic():
             + type(error).__name__
             + ": "
             + str(error)
+            + " [stage: " + stage + "]"
         )
 
     finally:
