@@ -95,8 +95,9 @@ def _get_or_create_key():
 
 
 def _java_bytes(data):
-    # PyJNIus converts Python integer lists to Java byte[].
-    return [value if value < 128 else value - 256 for value in data]
+    # Java byte is signed (-128..127). Convert each byte explicitly
+    # so PyJNIus never receives an out-of-range Python integer.
+    return [value if value < 128 else value - 256 for value in bytes(data)]
 
 
 def _python_bytes(data):
